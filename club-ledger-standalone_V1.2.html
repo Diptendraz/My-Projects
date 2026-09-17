@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Club Ledger — Income &amp; Expenditure Register</title>
+<style>
+  :root{
+    --paper:#efe8d5;
+    --paper-alt:#f6f1e2;
+    --ink:#2a2620;
+    --ink-soft:#7a7566;
+    --line:#c9bfa3;
+    --credit:#2f5233;
+    --credit-soft:#e3ead9;
+    --debit:#8b3a3a;
+    --debit-soft:#f2e2df;
+    --gold:#a9793d;
+    --mono: ui-monospace, "SFMono-Regular", "IBM Plex Mono", "Courier New", monospace;
+    --serif: Georgia, "Times New Roman", serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; background:var(--paper); color:var(--ink); font-family:var(--serif); }
+  input,select,button,textarea{ font-family:inherit; }
+  input:focus, select:focus, button:focus-visible, textarea:focus{
+    outline:2px solid var(--gold); outline-offset:1px;
+  }
+  h1,h2,h3{ margin:0; }
+  button{ cursor:pointer; }
+
+  #appHeader{ border-bottom:3px double var(--ink); padding:18px 18px 14px; }
+  .header-inner{ display:flex; align-items:flex-start; gap:10px; max-width:900px; margin:0 auto; }
+  .header-mark{ font-size:22px; flex-shrink:0; line-height:1; margin-top:2px; color:var(--gold); }
+  .club-name{ font-size:22px; letter-spacing:0.3px; cursor:text; }
+  .club-name-input{ font-size:22px; font-family:inherit; border:none; border-bottom:1px solid var(--gold); background:transparent; width:100%; padding:0; color:var(--ink); }
+  .subtitle{ font-size:12.5px; color:var(--ink-soft); margin-top:2px; font-style:italic; font-family:var(--sans); }
+
+  #tabNav{ display:flex; overflow-x:auto; gap:2px; padding:10px 12px 0; max-width:900px; margin:0 auto; }
+  .tab-btn{ font-family:var(--sans); font-size:13px; white-space:nowrap; padding:9px 13px; border:1px solid var(--line); border-bottom:none; border-radius:6px 6px 0 0; background:var(--paper-alt); color:var(--ink-soft); }
+  .tab-btn.active{ background:var(--paper); color:var(--ink); font-weight:700; border-color:var(--ink); }
+
+  #tabContent{ max-width:900px; margin:0 auto; padding:18px 18px 40px; border-top:1px solid var(--line); }
+  .section-title{ font-size:16px; margin:6px 0 12px; font-weight:700; }
+  .helper-text{ font-family:var(--sans); font-size:12.5px; color:var(--ink-soft); margin:-6px 0 14px; }
+
+  table{ width:100%; border-collapse:collapse; font-size:14px; }
+  th{ text-align:left; font-family:var(--sans); font-size:11.5px; color:var(--ink-soft); border-bottom:2px solid var(--ink); padding:6px 8px; font-weight:600; }
+  th.num{ text-align:right; }
+  td{ padding:8px; border-bottom:1px solid var(--line); }
+  td.num{ text-align:right; font-family:var(--mono); }
+  .note-text{ font-family:var(--sans); font-size:11.5px; color:var(--ink-soft); margin-top:2px; }
+  .empty-note{ font-family:var(--sans); font-size:13px; color:var(--ink-soft); margin-top:18px; font-style:italic; }
+
+  label.field-label{ display:block; font-family:var(--sans); font-size:12.5px; color:var(--ink-soft); margin:16px 0 6px; }
+  .field-input{ width:100%; padding:10px 11px; border:1px solid var(--line); border-radius:5px; background:#fff; font-size:14.5px; color:var(--ink); }
+  select.field-input{ appearance:auto; }
+  .row-flex{ display:flex; gap:8px; }
+  .two-col{ display:flex; gap:14px; }
+  .two-col > div{ flex:1; min-width:0; }
+
+  .icon-btn{ width:42px; border:1px solid var(--line); border-radius:5px; background:#fff; color:var(--gold); display:flex; align-items:center; justify-content:center; font-size:18px; }
+  .small-btn{ padding:0 14px; height:38px; border:1px solid var(--ink); border-radius:5px; background:var(--ink); color:var(--paper); font-size:13px; font-family:var(--sans); }
+  .small-btn-ghost{ padding:7px 12px; border:1px solid var(--line); border-radius:5px; background:transparent; color:var(--ink); font-size:12.5px; font-family:var(--sans); }
+  .small-btn-ghost:hover{ background:var(--paper-alt); }
+
+  .toggle-row{ display:flex; gap:10px; margin-bottom:6px; }
+  .voucher-preview{ font-family:var(--mono); font-size:12px; color:var(--gold); text-align:right; margin:2px 0 14px; }
+  .type-btn{ flex:1; padding:13px 8px; border:1px solid var(--line); border-radius:6px; background:#fff; color:var(--ink-soft); font-size:14px; font-weight:600; font-family:var(--sans); }
+  .type-btn.income-active{ background:var(--credit); border-color:var(--credit); color:#fff; }
+  .type-btn.expense-active{ background:var(--debit); border-color:var(--debit); color:#fff; }
+
+  .pill-row{ display:flex; gap:8px; flex-wrap:wrap; }
+  .pill{ padding:8px 14px; border-radius:20px; border:1px solid var(--line); background:#fff; font-size:13px; font-family:var(--sans); color:var(--ink-soft); }
+  .pill.active{ background:var(--gold); border-color:var(--gold); color:#fff; font-weight:700; }
+
+  .save-btn{ margin-top:22px; width:100%; padding:13px; border:none; border-radius:6px; background:var(--ink); color:var(--paper); font-size:15px; font-weight:700; font-family:var(--sans); }
+  .flash-ok{ margin-top:10px; text-align:center; font-size:12.5px; color:var(--credit); font-family:var(--sans); }
+
+  .edit-panel{ border:1px solid var(--gold); background:var(--paper-alt); border-radius:6px; padding:14px 16px 16px; margin-bottom:18px; }
+  .edit-panel-head{ display:flex; justify-content:space-between; align-items:center; font-family:var(--sans); font-size:12px; font-weight:700; color:var(--gold); letter-spacing:0.4px; margin-bottom:4px; }
+  .plain-icon-btn{ border:none; background:transparent; color:var(--ink-soft); font-size:16px; padding:2px 6px; }
+
+  .ledger-head{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+  .filter-row{ display:flex; gap:8px; margin:14px 0; flex-wrap:wrap; }
+  select.select-small{ padding:7px 9px; border:1px solid var(--line); border-radius:5px; background:#fff; font-size:13px; color:var(--ink); font-family:var(--sans); }
+  .row-actions{ display:flex; gap:2px; justify-content:center; }
+  .icon-action{ border:none; background:transparent; color:var(--ink-soft); padding:4px; font-size:15px; }
+  .icon-action:hover{ color:var(--ink); }
+
+  .tform{ display:flex; border:1px solid var(--ink); border-radius:4px; overflow:hidden; }
+  .tform-side{ flex:1; padding:12px 14px; min-width:0; }
+  .tform-divider{ width:1px; background:var(--ink); }
+  .tform-head{ font-weight:700; font-size:13px; border-bottom:2px solid var(--ink); padding-bottom:8px; margin-bottom:10px; font-family:var(--sans); }
+  .tform-row{ display:flex; justify-content:space-between; gap:10px; font-size:13px; padding:5px 0; border-bottom:1px dotted var(--line); }
+  .tform-total{ display:flex; justify-content:space-between; gap:10px; font-size:13.5px; font-weight:700; margin-top:10px; padding-top:8px; border-top:3px double var(--ink); }
+
+  .funds-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .fund-card{ border:1px solid var(--line); border-radius:6px; padding:12px; background:var(--paper-alt); }
+  .fund-label{ font-family:var(--sans); font-size:12.5px; font-weight:700; margin-bottom:8px; }
+  .fund-meta{ display:flex; justify-content:space-between; font-family:var(--mono); font-size:12px; margin-top:8px; }
+  .fund-balance{ font-family:var(--mono); font-size:16px; font-weight:700; margin-top:6px; border-top:1px solid var(--line); padding-top:6px; }
+
+  .charts-grid{ display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:8px; }
+  .chart-card{ border:1px solid var(--line); border-radius:6px; padding:14px; background:var(--paper-alt); }
+  .chart-title{ font-family:var(--sans); font-size:12.5px; font-weight:700; color:var(--ink-soft); margin-bottom:10px; }
+  .donut-wrap{ display:flex; align-items:center; gap:16px; flex-wrap:wrap; justify-content:center; }
+  .legend{ font-family:var(--sans); font-size:12px; flex:1; min-width:140px; }
+  .legend-row{ display:flex; align-items:center; gap:7px; padding:3px 0; }
+  .legend-dot{ width:9px; height:9px; border-radius:2px; flex-shrink:0; }
+  .legend-label{ flex:1; color:var(--ink); }
+  .legend-value{ font-family:var(--mono); color:var(--ink-soft); }
+
+  .bar-chart{ display:flex; flex-direction:column; gap:14px; }
+  .bar-row-label{ font-family:var(--sans); font-size:12.5px; font-weight:700; margin-bottom:5px; }
+  .bar-track{ height:16px; background:#fff; border:1px solid var(--line); border-radius:3px; overflow:hidden; display:flex; }
+  .bar-fill-income{ background:var(--credit); height:100%; }
+  .bar-fill-expense{ background:var(--debit); height:100%; }
+  .bar-nums{ display:flex; justify-content:space-between; font-family:var(--mono); font-size:11.5px; margin-top:3px; color:var(--ink-soft); }
+
+  .backup-grid{ display:flex; gap:10px; flex-wrap:wrap; margin-top:8px; }
+  .storage-note{ font-family:var(--sans); font-size:12px; color:var(--ink-soft); background:var(--paper-alt); border:1px solid var(--line); border-radius:6px; padding:10px 12px; margin-top:16px; line-height:1.5; }
+
+  .tform-actions{ display:flex; gap:8px; flex-wrap:wrap; margin:0 0 18px; }
+  .print-only{ display:none; }
+  .print-meta{ margin-bottom:18px; }
+  .print-meta .pm-club{ font-size:20px; font-weight:700; }
+  .print-meta .pm-sub{ font-family:var(--sans); font-size:12.5px; color:var(--ink-soft); margin-top:2px; }
+
+  @media print{
+    #appHeader, #tabNav, #toast, .no-print{ display:none !important; }
+    .print-only{ display:block !important; }
+    body{ background:#fff; }
+    #tabContent{ padding:0; max-width:100%; border-top:none; margin:0; }
+    .tform{ border-color:#000; }
+    .tform-head{ border-bottom-color:#000; }
+    .tform-total{ border-top-color:#000; }
+    .tform-divider{ background:#000; }
+  }
+  @page{ margin:1.5cm; }
+
+  #toast{ position:fixed; bottom:14px; left:50%; transform:translateX(-50%); background:var(--ink); color:var(--paper); padding:8px 16px; border-radius:20px; font-size:12.5px; font-family:var(--sans); box-shadow:0 3px 10px rgba(0,0,0,.2); transition:opacity .25s ease; z-index:50; }
+  #toast.hidden{ opacity:0; pointer-events:none; }
+  #toast.error{ background:var(--debit); }
+
+  @media(max-width:560px){
+    .charts-grid, .funds-grid{ grid-template-columns:1fr; }
+    .two-col{ flex-direction:column; }
+    .donut-wrap{ flex-direction:column; }
+  }
+</style>
+</head>
+<body>
+  <header id="appHeader"></header>
+  <nav id="tabNav"></nav>
+  <main id="tabContent"></main>
+  <div id="toast" class="hidden"></div>
+  <input type="file" id="importFileInput" accept="application/json" style="display:none" />
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<script>
+"use strict";
+
+/* ---------------- constants ---------------- */
+var MODES = ["Cash", "Bank", "Online", "Card"];
+var STORAGE_KEY = "clubLedgerData_v1";
+var SYNC_KEY = "clubLedgerSyncConfig_v1";
+var PALETTE = ["#2f5233","#a9793d","#5b7c99","#8b3a3a","#6b4226","#4a6741","#9c7a3c","#3d5a6c","#7a4b3a","#5c6b4a","#3f6b5a","#8a5a2f"];
+
+var DEFAULT_CATEGORIES = {
+  income: ["Membership Fees","Donations","Subscriptions","Interest Income","Grants & Sponsorships","Event Income","Sale of Old Assets","Miscellaneous Income"],
+  expense: ["Salaries & Honorarium","Rent","Electricity & Utilities","Printing & Stationery","Repairs & Maintenance","Event Expenses","Charity Disbursed","Postage & Courier","Audit Fees","Miscellaneous Expenses"]
+};
+
+/* ---------------- helpers ---------------- */
+function uid(){ return Math.random().toString(36).slice(2,10) + Date.now().toString(36); }
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function fmt(n){
+  n = Number(n) || 0;
+  var sign = n < 0 ? "-" : "";
+  return sign + Math.abs(n).toLocaleString("en-IN", { minimumFractionDigits:2, maximumFractionDigits:2 });
+}
+function formatDate(iso){
+  var d = new Date(iso + "T00:00:00");
+  if (isNaN(d)) return iso;
+  return d.toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" });
+}
+function esc(s){
+  return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
+    return { "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[c];
+  });
+}
+function pad4(n){ return String(n).padStart(4,"0"); }
+function voucherPrefix(type){ return type === "income" ? "IV-" : "EV-"; }
+function nextVoucherNo(type){
+  state.counters[type] = (state.counters[type] || 0) + 1;
+  return voucherPrefix(type) + pad4(state.counters[type]);
+}
+
+/* ---------------- persistence ---------------- */
+function defaultData(){
+  return {
+    clubName: "My Club",
+    transactions: [],
+    categories: { income: DEFAULT_CATEGORIES.income.slice(), expense: DEFAULT_CATEGORIES.expense.slice() },
+    opening: { Cash:0, Bank:0, Online:0, Card:0 },
+    counters: { income:0, expense:0 }
+  };
+}
+var storageAvailable = true;
+function loadState(){
+  try{
+    var raw = window.localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  }catch(e){ storageAvailable = false; }
+  return defaultData();
+}
+function saveState(){
+  try{
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }catch(e){
+    if (storageAvailable){
+      storageAvailable = false;
+      showToast("This browser is blocking local storage — use Export JSON often to avoid losing entries.", "error");
+    }
+  }
+  if (sync.enabled && !sync.applyingRemote) pushRemote();
+}
+
+/* ---------------- real-time sync (optional, via Firebase) ---------------- */
+var sync = { enabled:false, config:null, ledgerId:null, docRef:null, unsub:null, lastPushedJson:null, applyingRemote:false };
+
+function loadSyncConfig(){
+  try{ var raw = window.localStorage.getItem(SYNC_KEY); return raw ? JSON.parse(raw) : null; }catch(e){ return null; }
+}
+function saveSyncConfig(cfg){
+  try{ window.localStorage.setItem(SYNC_KEY, JSON.stringify(cfg)); }catch(e){}
+}
+
+function encodeInvite(config, ledgerId){
+  return btoa(unescape(encodeURIComponent(JSON.stringify({ c:config, l:ledgerId }))));
+}
+function decodeInvite(str){
+  return JSON.parse(decodeURIComponent(escape(atob(str))));
+}
+function copyToClipboard(text){
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).catch(function(){ fallbackCopy(text); });
+  } else {
+    fallbackCopy(text);
+  }
+}
+function fallbackCopy(text){
+  var ta = document.createElement("textarea");
+  ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand("copy"); }catch(e){}
+  document.body.removeChild(ta);
+}
+
+function pushRemote(){
+  if (!sync.docRef || sync.applyingRemote) return;
+  var json = JSON.stringify(state);
+  sync.lastPushedJson = json;
+  var payload = { json: json };
+  try{ payload.updatedAt = firebase.firestore.FieldValue.serverTimestamp(); }catch(e){}
+  sync.docRef.set(payload).catch(function(err){
+    showToast("Couldn't sync your change: " + err.message, "error");
+  });
+}
+
+function subscribeRemote(){
+  if (sync.unsub) sync.unsub();
+  sync.unsub = sync.docRef.onSnapshot(function(snap){
+    if (!snap.exists) return;
+    var data = snap.data();
+    if (!data || !data.json || data.json === sync.lastPushedJson) return;
+    sync.applyingRemote = true;
+    try{
+      state = JSON.parse(data.json);
+      migrateState();
+      entryForm = freshEntryForm();
+      render();
+    }catch(e){}
+    sync.applyingRemote = false;
+  }, function(err){
+    showToast("Sync error: " + err.message, "error");
+  });
+}
+
+function connectSync(config, ledgerId, opts){
+  opts = opts || {};
+  if (typeof firebase === "undefined"){
+    showToast("Couldn't reach the sync service — check your internet connection.", "error");
+    return;
+  }
+  try{
+    if (!firebase.apps.length) firebase.initializeApp(config);
+    var db = firebase.firestore();
+    sync.config = config;
+    sync.ledgerId = ledgerId;
+    sync.docRef = db.collection("clubLedgers").doc(ledgerId);
+
+    var finish = function(){
+      sync.enabled = true;
+      subscribeRemote();
+      saveSyncConfig({ config:config, ledgerId:ledgerId, enabled:true });
+      if (!opts.silent) showToast("Connected — changes will now sync live with this code.");
+      render();
+    };
+
+    if (opts.skipPrompt){
+      finish();
+    } else {
+      sync.docRef.get().then(function(snap){
+        if (snap.exists && snap.data() && snap.data().json){
+          var loadShared = window.confirm(
+            "Found existing shared data for this code.\n\n" +
+            "OK = Load the shared data onto this device (replacing what's here).\n" +
+            "Cancel = Keep this device's data and overwrite the shared copy."
+          );
+          if (loadShared){
+            try{
+              state = JSON.parse(snap.data().json);
+              migrateState();
+              entryForm = freshEntryForm();
+            }catch(e){}
+            finish();
+          } else {
+            finish();
+            pushRemote();
+          }
+        } else {
+          finish();
+          pushRemote();
+        }
+      }).catch(function(err){
+        showToast("Couldn't reach the sync service: " + err.message, "error");
+      });
+    }
+  }catch(e){
+    showToast("Couldn't connect: " + e.message, "error");
+  }
+}
+
+function disconnectSync(){
+  if (sync.unsub) sync.unsub();
+  sync.unsub = null;
+  sync.enabled = false;
+  saveSyncConfig({ config:sync.config, ledgerId:sync.ledgerId, enabled:false });
+  showToast("Disconnected — this device now works offline only.");
+  render();
+}
+
+/* ---------------- state ---------------- */
+var state = loadState();
+migrateState();
+var currentTab = "dashboard";
+var headerEditing = false;
+var addingCategory = false;
+var ledgerFilters = { type:"all", mode:"all" };
+
+function migrateState(){
+  var changed = false;
+  if (!state.counters){ state.counters = { income:0, expense:0 }; changed = true; }
+  if (!state.opening){ state.opening = { Cash:0, Bank:0, Online:0, Card:0 }; changed = true; }
+  var needsVoucherNos = state.transactions.some(function(t){ return !t.voucherNo; });
+  if (needsVoucherNos){
+    var ordered = state.transactions.slice().sort(function(a,b){ return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0); });
+    ordered.forEach(function(t){
+      if (!t.voucherNo) t.voucherNo = nextVoucherNo(t.type);
+    });
+    changed = true;
+  }
+  if (changed) saveState();
+}
+
+function freshEntryForm(type){
+  type = type || "income";
+  return { id:null, editing:false, originalType:type, voucherNo:null, type:type, category:(state.categories[type][0] || ""), mode:"Cash", amount:"", date:todayISO(), note:"" };
+}
+var entryForm = freshEntryForm();
+
+/* ---------------- calculations ---------------- */
+function computeTotals(transactions){
+  var byCategory = { income:{}, expense:{} };
+  var byMode = { Cash:{income:0,expense:0}, Bank:{income:0,expense:0}, Online:{income:0,expense:0}, Card:{income:0,expense:0} };
+  var totalIncome = 0, totalExpense = 0;
+  for (var i=0;i<transactions.length;i++){
+    var t = transactions[i];
+    var amt = Number(t.amount) || 0;
+    byCategory[t.type][t.category] = (byCategory[t.type][t.category] || 0) + amt;
+    byMode[t.mode][t.type] += amt;
+    if (t.type === "income") totalIncome += amt; else totalExpense += amt;
+  }
+  return { byCategory:byCategory, byMode:byMode, totalIncome:totalIncome, totalExpense:totalExpense, surplus: totalIncome - totalExpense };
+}
+
+/* ---------------- toast ---------------- */
+var toastTimer = null;
+function showToast(msg, type){
+  var el = document.getElementById("toast");
+  el.textContent = msg;
+  el.className = type === "error" ? "error" : "";
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ el.className = "hidden"; }, 3200);
+}
+
+/* ---------------- render root ---------------- */
+var TABS = [
+  { id:"dashboard", label:"Summary" },
+  { id:"add", label:"New Entry" },
+  { id:"ledger", label:"Ledger" },
+  { id:"categories", label:"Categories" },
+  { id:"tform", label:"I&E Account" },
+  { id:"funds", label:"Funds" },
+  { id:"settings", label:"Settings & Data" }
+];
+
+function render(){
+  document.title = state.clubName + " — Ledger";
+  renderHeader();
+  renderNav();
+  renderTabContent();
+}
+
+function renderHeader(){
+  var header = document.getElementById("appHeader");
+  if (headerEditing){
+    header.innerHTML =
+      '<div class="header-inner">' +
+        '<span class="header-mark">&#9776;</span>' +
+        '<div style="flex:1;min-width:0;">' +
+          '<input id="clubNameInput" class="club-name-input" value="' + esc(state.clubName) + '" />' +
+          '<div class="subtitle">Income &amp; Expenditure Register</div>' +
+        '</div>' +
+      '</div>';
+    var input = document.getElementById("clubNameInput");
+    input.focus();
+    input.select();
+    input.addEventListener("blur", commitClubName);
+    input.addEventListener("keydown", function(e){ if (e.key === "Enter") input.blur(); });
+  } else {
+    header.innerHTML =
+      '<div class="header-inner">' +
+        '<span class="header-mark">&#9776;</span>' +
+        '<div style="flex:1;min-width:0;">' +
+          '<h1 class="club-name" id="clubNameLabel" title="Tap to rename">' + esc(state.clubName) + '</h1>' +
+          '<div class="subtitle">Income &amp; Expenditure Register' + (sync.enabled ? ' &nbsp;&middot;&nbsp; <span style="color:var(--credit)">&#128994; Live sync on</span>' : '') + '</div>' +
+        '</div>' +
+      '</div>';
+    document.getElementById("clubNameLabel").addEventListener("click", function(){
+      headerEditing = true; renderHeader();
+    });
+  }
+}
+function commitClubName(){
+  var input = document.getElementById("clubNameInput");
+  var val = input.value.trim();
+  state.clubName = val || "My Club";
+  headerEditing = false;
+  saveState();
+  render();
+}
+
+function renderNav(){
+  var nav = document.getElementById("tabNav");
+  var html = "";
+  for (var i=0;i<TABS.length;i++){
+    var t = TABS[i];
+    html += '<button class="tab-btn' + (currentTab===t.id ? ' active':'') + '" data-tab="' + t.id + '">' + t.label + '</button>';
+  }
+  nav.innerHTML = html;
+  var btns = nav.querySelectorAll(".tab-btn");
+  for (var j=0;j<btns.length;j++){
+    btns[j].addEventListener("click", function(){
+      var tab = this.getAttribute("data-tab");
+      if (tab === "add") entryForm = freshEntryForm();
+      currentTab = tab;
+      render();
+    });
+  }
+}
+
+function renderTabContent(){
+  var el = document.getElementById("tabContent");
+  if (currentTab === "dashboard") el.innerHTML = dashboardHTML();
+  else if (currentTab === "add") el.innerHTML = entryFormHTML();
+  else if (currentTab === "ledger") el.innerHTML = ledgerHTML();
+  else if (currentTab === "categories") el.innerHTML = categoriesHTML();
+  else if (currentTab === "tform") el.innerHTML = tformHTML();
+  else if (currentTab === "funds") el.innerHTML = fundsHTML();
+  else if (currentTab === "settings") el.innerHTML = settingsHTML();
+
+  if (currentTab === "add") bindEntryForm();
+  if (currentTab === "ledger") { bindLedgerEvents(); if (entryForm.editing) bindEntryForm(); }
+  if (currentTab === "categories") bindCategoriesEvents();
+  if (currentTab === "funds") bindFundsEvents();
+  if (currentTab === "tform") bindTformEvents();
+  if (currentTab === "settings") bindSettingsEvents();
+  if (currentTab === "dashboard") { /* charts are static SVG, no binding needed */ }
+}
+
+/* ---------------- Dashboard ---------------- */
+function dashboardHTML(){
+  var totals = computeTotals(state.transactions);
+  var closing = function(m){ return (Number(state.opening[m]) || 0) + totals.byMode[m].income - totals.byMode[m].expense; };
+
+  var html = '<h2 class="section-title">At a glance</h2>';
+  html += '<table><tbody>';
+  html += '<tr><td>Total Income</td><td class="num" style="color:var(--credit)">' + fmt(totals.totalIncome) + '</td></tr>';
+  html += '<tr><td>Total Expenditure</td><td class="num" style="color:var(--debit)">' + fmt(totals.totalExpense) + '</td></tr>';
+  html += '<tr style="border-top:1px solid var(--line)"><td style="font-weight:700">' +
+            (totals.surplus>=0 ? "Surplus (Income over Expenditure)" : "Deficit (Expenditure over Income)") +
+          '</td><td class="num" style="font-weight:700;color:' + (totals.surplus>=0?'var(--credit)':'var(--debit)') + '">' + fmt(Math.abs(totals.surplus)) + '</td></tr>';
+  html += '</tbody></table>';
+
+  if (state.transactions.length === 0){
+    html += '<p class="empty-note">No entries yet. Head to "New Entry" to record your first receipt or payment.</p>';
+    return html;
+  }
+
+  html += '<h2 class="section-title" style="margin-top:26px">Sources of income &amp; heads of expenditure</h2>';
+  html += '<div class="charts-grid">';
+  html += chartCardHTML("Income by category", totals.byCategory.income, "credit");
+  html += chartCardHTML("Expenditure by category", totals.byCategory.expense, "debit");
+  html += '</div>';
+
+  html += '<h2 class="section-title" style="margin-top:10px">Fund-wise position</h2>';
+  var maxVal = 1;
+  MODES.forEach(function(m){
+    maxVal = Math.max(maxVal, totals.byMode[m].income, totals.byMode[m].expense);
+  });
+  html += '<div class="chart-card"><div class="bar-chart">';
+  MODES.forEach(function(m){
+    var inc = totals.byMode[m].income, exp = totals.byMode[m].expense;
+    html += '<div>';
+    html += '<div class="bar-row-label">' + m + '</div>';
+    html += '<div class="bar-track"><div class="bar-fill-income" style="width:' + (inc/maxVal*100) + '%"></div></div>';
+    html += '<div class="bar-nums"><span style="color:var(--credit)">Received ' + fmt(inc) + '</span></div>';
+    html += '<div class="bar-track" style="margin-top:4px"><div class="bar-fill-expense" style="width:' + (exp/maxVal*100) + '%"></div></div>';
+    html += '<div class="bar-nums"><span style="color:var(--debit)">Paid ' + fmt(exp) + '</span></div>';
+    html += '</div>';
+  });
+  html += '</div></div>';
+
+  html += '<h2 class="section-title" style="margin-top:22px">Closing balance by fund</h2>';
+  html += '<table><thead><tr><th>Fund</th><th class="num">Opening</th><th class="num">Received</th><th class="num">Paid</th><th class="num">Balance</th></tr></thead><tbody>';
+  MODES.forEach(function(m){
+    html += '<tr><td>' + m + '</td><td class="num">' + fmt(Number(state.opening[m])||0) + '</td>' +
+            '<td class="num" style="color:var(--credit)">' + fmt(totals.byMode[m].income) + '</td>' +
+            '<td class="num" style="color:var(--debit)">' + fmt(totals.byMode[m].expense) + '</td>' +
+            '<td class="num" style="font-weight:700">' + fmt(closing(m)) + '</td></tr>';
+  });
+  html += '</tbody></table>';
+  return html;
+}
+
+function chartCardHTML(title, dataObj, tone){
+  var entries = Object.keys(dataObj).map(function(k){ return [k, dataObj[k]]; }).sort(function(a,b){ return b[1]-a[1]; });
+  var total = entries.reduce(function(s,e){ return s+e[1]; }, 0);
+  var html = '<div class="chart-card"><div class="chart-title">' + esc(title) + '</div>';
+  if (entries.length === 0 || total === 0){
+    html += '<div class="helper-text" style="margin:0">No ' + (tone==="credit"?"income":"expenditure") + ' recorded yet.</div></div>';
+    return html;
+  }
+  var items = entries.map(function(e,i){ return { label:e[0], value:e[1], color:PALETTE[i % PALETTE.length] }; });
+  html += '<div class="donut-wrap">';
+  html += donutSVG(items, total);
+  html += '<div class="legend">';
+  items.forEach(function(it){
+    var pct = total ? (it.value/total*100) : 0;
+    html += '<div class="legend-row"><span class="legend-dot" style="background:' + it.color + '"></span>' +
+            '<span class="legend-label">' + esc(it.label) + '</span>' +
+            '<span class="legend-value">' + pct.toFixed(0) + '%</span></div>';
+  });
+  html += '</div></div></div>';
+  return html;
+}
+
+function donutSVG(items, total){
+  var size = 150, r = 52, cx = size/2, cy = size/2, thickness = 20;
+  var circumference = 2 * Math.PI * r;
+  var offsetAcc = 0;
+  var circles = "";
+  items.forEach(function(it){
+    var frac = total ? it.value/total : 0;
+    var dash = frac * circumference;
+    var gap = circumference - dash;
+    circles += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="' + it.color + '" stroke-width="' + thickness +
+      '" stroke-dasharray="' + dash + ' ' + gap + '" stroke-dashoffset="' + (-offsetAcc) + '" transform="rotate(-90 ' + cx + ' ' + cy + ')"></circle>';
+    offsetAcc += dash;
+  });
+  var svg = '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '">' +
+    '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="var(--line)" stroke-width="' + thickness + '"></circle>' +
+    circles +
+    '<text x="' + cx + '" y="' + (cy-2) + '" text-anchor="middle" font-family="var(--mono)" font-size="12" fill="var(--ink)">' + fmt(total) + '</text>' +
+    '<text x="' + cx + '" y="' + (cy+13) + '" text-anchor="middle" font-family="var(--sans)" font-size="8.5" fill="var(--ink-soft)">total</text>' +
+    '</svg>';
+  return svg;
+}
+
+/* ---------------- Entry form (shared by Add tab + Ledger edit panel) ---------------- */
+function voucherPreviewLabel(){
+  if (entryForm.editing){
+    if (entryForm.originalType !== entryForm.type){
+      var previewNum = (state.counters[entryForm.type] || 0) + 1;
+      return "New Voucher No. (type changed): " + voucherPrefix(entryForm.type) + pad4(previewNum);
+    }
+    return "Voucher No.: " + entryForm.voucherNo;
+  }
+  var nextNum = (state.counters[entryForm.type] || 0) + 1;
+  return "Voucher No. (auto): " + voucherPrefix(entryForm.type) + pad4(nextNum);
+}
+
+function entryFormHTML(){
+  var titleBlock = "";
+  if (entryForm.editing){
+    titleBlock = '<div class="edit-panel-head"><span>EDITING ENTRY</span><button class="plain-icon-btn" id="efCancelX" title="Cancel">&#10005;</button></div>';
+  }
+  var cats = state.categories[entryForm.type];
+  var wrapOpen = entryForm.editing ? '<div class="edit-panel">' : '';
+  var wrapClose = entryForm.editing ? '</div>' : '';
+  var heading = entryForm.editing ? "" : '<h2 class="section-title">Record a receipt or payment</h2>';
+
+  var html = wrapOpen + titleBlock + heading;
+
+  html += '<div class="toggle-row">' +
+    '<button class="type-btn' + (entryForm.type==="income" ? " income-active":"") + '" id="efTypeIncome">Income received</button>' +
+    '<button class="type-btn' + (entryForm.type==="expense" ? " expense-active":"") + '" id="efTypeExpense">Expense paid</button>' +
+    '</div>';
+
+  html += '<div class="voucher-preview">' + voucherPreviewLabel() + '</div>';
+
+  html += '<label class="field-label">Category (nature of ' + (entryForm.type==="income"?"income":"expense") + ')</label>';
+  if (!addingCategory){
+    html += '<div class="row-flex">' +
+      '<select id="efCategory" class="field-input" style="flex:1">' +
+      cats.map(function(c){ return '<option value="' + esc(c) + '"' + (c===entryForm.category?' selected':'') + '>' + esc(c) + '</option>'; }).join("") +
+      '</select>' +
+      '<button class="icon-btn" id="efAddCatBtn" title="Add new category">+</button>' +
+      '</div>';
+  } else {
+    html += '<div class="row-flex">' +
+      '<input id="efNewCat" class="field-input" placeholder="New category name" />' +
+      '<button class="small-btn" id="efAddCatConfirm">Add</button>' +
+      '<button class="small-btn-ghost" id="efAddCatCancel">Cancel</button>' +
+      '</div>';
+  }
+
+  html += '<label class="field-label">Mode of ' + (entryForm.type==="income"?"receipt":"payment") + '</label>';
+  html += '<div class="pill-row" id="efModeRow">';
+  MODES.forEach(function(m){
+    html += '<button class="pill' + (entryForm.mode===m ? ' active':'') + '" data-mode="' + m + '">' + m + '</button>';
+  });
+  html += '</div>';
+
+  html += '<div class="two-col">' +
+    '<div><label class="field-label">Amount (&#8377;)</label>' +
+    '<input id="efAmount" type="number" inputmode="decimal" class="field-input" style="font-family:var(--mono)" placeholder="0.00" value="' + esc(entryForm.amount) + '" /></div>' +
+    '<div><label class="field-label">Date</label>' +
+    '<input id="efDate" type="date" class="field-input" value="' + esc(entryForm.date) + '" /></div>' +
+    '</div>';
+
+  html += '<label class="field-label">Particulars / note (optional)</label>' +
+    '<input id="efNote" class="field-input" placeholder="e.g. Received from R. Sharma, cheque no. 004521" value="' + esc(entryForm.note) + '" />';
+
+  if (entryForm.editing){
+    html += '<div style="display:flex;gap:8px;margin-top:16px">' +
+      '<button class="save-btn" style="margin-top:0;flex:1" id="efSave">&#10003; Save changes</button>' +
+      '<button class="small-btn-ghost" id="efCancel" style="flex:0 0 auto">Cancel</button>' +
+      '</div>';
+  } else {
+    html += '<button class="save-btn" id="efSave">Save entry</button>' +
+      '<div class="flash-ok" id="efFlash" style="display:none">Entry saved to the register.</div>';
+  }
+
+  html += wrapClose;
+  return html;
+}
+
+function bindEntryForm(){
+  var byId = function(id){ return document.getElementById(id); };
+
+  byId("efTypeIncome").addEventListener("click", function(){
+    entryForm.type = "income";
+    if (state.categories.income.indexOf(entryForm.category) === -1) entryForm.category = state.categories.income[0] || "";
+    addingCategory = false;
+    renderTabContent();
+  });
+  byId("efTypeExpense").addEventListener("click", function(){
+    entryForm.type = "expense";
+    if (state.categories.expense.indexOf(entryForm.category) === -1) entryForm.category = state.categories.expense[0] || "";
+    addingCategory = false;
+    renderTabContent();
+  });
+
+  if (!addingCategory){
+    byId("efCategory").addEventListener("change", function(e){ entryForm.category = e.target.value; });
+    byId("efAddCatBtn").addEventListener("click", function(){ addingCategory = true; renderTabContent(); });
+  } else {
+    var newCatInput = byId("efNewCat");
+    newCatInput.focus();
+    newCatInput.addEventListener("keydown", function(e){ if (e.key === "Enter") confirmAddCategory(); });
+    byId("efAddCatConfirm").addEventListener("click", confirmAddCategory);
+    byId("efAddCatCancel").addEventListener("click", function(){ addingCategory = false; renderTabContent(); });
+  }
+
+  var modePills = document.querySelectorAll("#efModeRow .pill");
+  for (var i=0;i<modePills.length;i++){
+    modePills[i].addEventListener("click", function(){
+      entryForm.mode = this.getAttribute("data-mode");
+      var all = document.querySelectorAll("#efModeRow .pill");
+      for (var j=0;j<all.length;j++) all[j].classList.remove("active");
+      this.classList.add("active");
+    });
+  }
+
+  byId("efAmount").addEventListener("input", function(e){ entryForm.amount = e.target.value; });
+  byId("efDate").addEventListener("input", function(e){ entryForm.date = e.target.value; });
+  byId("efNote").addEventListener("input", function(e){ entryForm.note = e.target.value; });
+
+  byId("efSave").addEventListener("click", saveEntryForm);
+  if (entryForm.editing){
+    byId("efCancel").addEventListener("click", cancelEdit);
+    byId("efCancelX").addEventListener("click", cancelEdit);
+  }
+
+  function confirmAddCategory(){
+    var name = newCatInput.value.trim();
+    if (!name || cats_includes(name)) return;
+    state.categories[entryForm.type].push(name);
+    entryForm.category = name;
+    addingCategory = false;
+    saveState();
+    renderTabContent();
+  }
+  function cats_includes(name){ return state.categories[entryForm.type].indexOf(name) !== -1; }
+}
+
+function saveEntryForm(){
+  var amt = Number(entryForm.amount);
+  if (!amt || amt <= 0 || !entryForm.category){
+    showToast("Enter a category and an amount greater than zero.", "error");
+    return;
+  }
+  if (entryForm.editing){
+    var idx = state.transactions.findIndex(function(t){ return t.id === entryForm.id; });
+    if (idx !== -1){
+      var voucherNo = entryForm.originalType !== entryForm.type ? nextVoucherNo(entryForm.type) : entryForm.voucherNo;
+      state.transactions[idx] = { id:entryForm.id, voucherNo:voucherNo, type:entryForm.type, category:entryForm.category, mode:entryForm.mode, amount:amt, date:entryForm.date, note:entryForm.note.trim() };
+    }
+    saveState();
+    showToast("Entry updated.");
+    entryForm = freshEntryForm();
+    renderTabContent();
+  } else {
+    var entry = { id:uid(), voucherNo:nextVoucherNo(entryForm.type), type:entryForm.type, category:entryForm.category, mode:entryForm.mode, amount:amt, date:entryForm.date, note:entryForm.note.trim() };
+    state.transactions.unshift(entry);
+    saveState();
+    var keepType = entryForm.type, keepMode = entryForm.mode;
+    entryForm = freshEntryForm(keepType);
+    entryForm.mode = keepMode;
+    renderTabContent();
+    var flash = document.getElementById("efFlash");
+    if (flash){ flash.style.display = "block"; setTimeout(function(){ if(flash) flash.style.display = "none"; }, 1500); }
+  }
+}
+
+function cancelEdit(){
+  entryForm = freshEntryForm();
+  renderTabContent();
+}
+
+/* ---------------- Ledger ---------------- */
+function ledgerHTML(){
+  var rows = state.transactions.filter(function(t){
+    return (ledgerFilters.type === "all" || t.type === ledgerFilters.type) &&
+           (ledgerFilters.mode === "all" || t.mode === ledgerFilters.mode);
+  }).sort(function(a,b){ return a.date < b.date ? 1 : (a.date > b.date ? -1 : 0); });
+
+  var html = '<div class="ledger-head"><h2 class="section-title">Cash Book / Ledger</h2>' +
+    '<button class="small-btn-ghost" id="exportCsvBtn">&#8681; Export CSV</button></div>';
+
+  html += '<div class="filter-row">' +
+    '<select id="filterType" class="select-small">' +
+    '<option value="all">All types</option>' +
+    '<option value="income"' + (ledgerFilters.type==="income"?' selected':'') + '>Income only</option>' +
+    '<option value="expense"' + (ledgerFilters.type==="expense"?' selected':'') + '>Expense only</option>' +
+    '</select>' +
+    '<select id="filterMode" class="select-small">' +
+    '<option value="all">All funds</option>' +
+    MODES.map(function(m){ return '<option value="' + m + '"' + (ledgerFilters.mode===m?' selected':'') + '>' + m + '</option>'; }).join("") +
+    '</select></div>';
+
+  if (entryForm.editing) html += entryFormHTML();
+
+  html += '<div style="overflow-x:auto"><table><thead><tr>' +
+    '<th>Voucher No</th><th>Date</th><th>Particulars</th><th>Fund</th><th class="num">Debit</th><th class="num">Credit</th><th></th>' +
+    '</tr></thead><tbody>';
+
+  if (rows.length === 0){
+    html += '<tr><td colspan="7" style="text-align:center;color:var(--ink-soft)">No matching entries.</td></tr>';
+  } else {
+    rows.forEach(function(t){
+      html += '<tr>' +
+        '<td style="font-family:var(--mono);font-size:12.5px;color:' + (t.type==="income"?'var(--credit)':'var(--debit)') + '">' + esc(t.voucherNo || "—") + '</td>' +
+        '<td>' + formatDate(t.date) + '</td>' +
+        '<td><div style="font-weight:600">' + esc(t.category) + '</div>' + (t.note ? '<div class="note-text">' + esc(t.note) + '</div>' : '') + '</td>' +
+        '<td>' + t.mode + '</td>' +
+        '<td class="num" style="color:var(--debit)">' + (t.type==="expense" ? fmt(t.amount) : "") + '</td>' +
+        '<td class="num" style="color:var(--credit)">' + (t.type==="income" ? fmt(t.amount) : "") + '</td>' +
+        '<td style="text-align:center"><div class="row-actions">' +
+          '<button class="icon-action" data-edit="' + t.id + '" title="Edit entry">&#9998;</button>' +
+          '<button class="icon-action" data-del="' + t.id + '" title="Delete entry">&#128465;</button>' +
+        '</div></td>' +
+        '</tr>';
+    });
+  }
+  html += '</tbody></table></div>';
+  return html;
+}
+
+function bindLedgerEvents(){
+  document.getElementById("filterType").addEventListener("change", function(e){ ledgerFilters.type = e.target.value; renderTabContent(); });
+  document.getElementById("filterMode").addEventListener("change", function(e){ ledgerFilters.mode = e.target.value; renderTabContent(); });
+  document.getElementById("exportCsvBtn").addEventListener("click", exportCsv);
+
+  var editBtns = document.querySelectorAll("[data-edit]");
+  for (var i=0;i<editBtns.length;i++){
+    editBtns[i].addEventListener("click", function(){
+      var id = this.getAttribute("data-edit");
+      var txn = state.transactions.find(function(t){ return t.id === id; });
+      if (!txn) return;
+      entryForm = { id:txn.id, editing:true, originalType:txn.type, voucherNo:txn.voucherNo, type:txn.type, category:txn.category, mode:txn.mode, amount:String(txn.amount), date:txn.date, note:txn.note || "" };
+      addingCategory = false;
+      renderTabContent();
+      window.scrollTo({ top:0, behavior:"smooth" });
+    });
+  }
+  var delBtns = document.querySelectorAll("[data-del]");
+  for (var j=0;j<delBtns.length;j++){
+    delBtns[j].addEventListener("click", function(){
+      var id = this.getAttribute("data-del");
+      if (!window.confirm("Delete this entry? This cannot be undone.")) return;
+      state.transactions = state.transactions.filter(function(t){ return t.id !== id; });
+      if (entryForm.id === id) entryForm = freshEntryForm();
+      saveState();
+      renderTabContent();
+      showToast("Entry deleted.");
+    });
+  }
+}
+
+function exportCsv(){
+  var header = ["Voucher No","Date","Type","Category","Mode","Amount","Note"];
+  var lines = [header.join(",")];
+  var sorted = state.transactions.slice().sort(function(a,b){ return a.date < b.date ? -1 : 1; });
+  sorted.forEach(function(t){
+    lines.push([t.voucherNo || "", t.date, t.type, '"' + t.category.replace(/"/g,'""') + '"', t.mode, t.amount, '"' + (t.note||"").replace(/"/g,'""') + '"'].join(","));
+  });
+  downloadBlob(lines.join("\n"), "text/csv", state.clubName.replace(/\s+/g,"_") + "_ledger.csv");
+}
+
+function downloadBlob(content, mime, filename){
+  var blob = new Blob([content], { type:mime });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* ---------------- Categories (all income & expense heads) ---------------- */
+function categoriesHTML(){
+  var totals = computeTotals(state.transactions);
+  var html = '<h2 class="section-title">Categories</h2>';
+  html += '<p class="helper-text">Every category (head) used in the register, with entries and totals against each. Remove a head only once it has no entries left.</p>';
+  html += categorySectionHTML("income", totals, "Income Heads", totals.totalIncome);
+  html += categorySectionHTML("expense", totals, "Expenditure Heads", totals.totalExpense);
+  return html;
+}
+
+function categorySectionHTML(type, totals, label, totalAll){
+  var cats = state.categories[type].slice().sort(function(a,b){
+    return (totals.byCategory[type][b]||0) - (totals.byCategory[type][a]||0);
+  });
+  var html = '<h3 style="font-size:14px;margin:22px 0 10px">' + label + '</h3>';
+  html += '<table><thead><tr><th>Head</th><th class="num">Entries</th><th class="num">Amount</th><th class="num">% of total</th><th></th></tr></thead><tbody>';
+  if (cats.length === 0){
+    html += '<tr><td colspan="5" style="color:var(--ink-soft)">No heads yet.</td></tr>';
+  } else {
+    cats.forEach(function(c){
+      var amt = totals.byCategory[type][c] || 0;
+      var count = state.transactions.filter(function(t){ return t.type===type && t.category===c; }).length;
+      var pct = totalAll ? (amt/totalAll*100) : 0;
+      html += '<tr><td>' + esc(c) + '</td><td class="num">' + count + '</td><td class="num">' + fmt(amt) + '</td><td class="num">' + pct.toFixed(1) + '%</td>' +
+        '<td style="text-align:center">' + (count===0 ? '<button class="icon-action" data-delcat-type="' + type + '" data-delcat-name="' + esc(c) + '" title="Delete unused head">&#128465;</button>' : '') + '</td></tr>';
+    });
+  }
+  html += '<tr style="border-top:1px solid var(--ink)"><td style="font-weight:700">Total</td><td></td><td class="num" style="font-weight:700">' + fmt(totalAll) + '</td><td></td><td></td></tr>';
+  html += '</tbody></table>';
+  html += '<div class="row-flex" style="margin-top:10px">' +
+    '<input class="field-input" placeholder="New ' + (type==="income"?"income":"expenditure") + ' head" data-newcat="' + type + '" />' +
+    '<button class="small-btn" data-addcatbtn="' + type + '">Add</button>' +
+    '</div>';
+  return html;
+}
+
+function bindCategoriesEvents(){
+  var delBtns = document.querySelectorAll("[data-delcat-type]");
+  for (var i=0;i<delBtns.length;i++){
+    delBtns[i].addEventListener("click", function(){
+      var type = this.getAttribute("data-delcat-type");
+      var name = this.getAttribute("data-delcat-name");
+      var stillUsed = state.transactions.some(function(t){ return t.type===type && t.category===name; });
+      if (stillUsed){ showToast("That head still has entries against it.", "error"); return; }
+      if (!window.confirm('Delete the head "' + name + '"?')) return;
+      state.categories[type] = state.categories[type].filter(function(c){ return c !== name; });
+      saveState();
+      renderTabContent();
+      showToast("Head removed.");
+    });
+  }
+  ["income","expense"].forEach(function(type){
+    var btn = document.querySelector('[data-addcatbtn="' + type + '"]');
+    var input = document.querySelector('[data-newcat="' + type + '"]');
+    if (!btn || !input) return;
+    var add = function(){
+      var name = input.value.trim();
+      if (!name) return;
+      if (state.categories[type].indexOf(name) !== -1){ showToast("That head already exists.", "error"); return; }
+      state.categories[type].push(name);
+      saveState();
+      renderTabContent();
+      showToast("Head added.");
+    };
+    btn.addEventListener("click", add);
+    input.addEventListener("keydown", function(e){ if (e.key === "Enter") add(); });
+  });
+}
+
+/* ---------------- T-form ---------------- */
+function tformHTML(){
+  var totals = computeTotals(state.transactions);
+  var expenseRows = Object.keys(totals.byCategory.expense).map(function(k){ return [k, totals.byCategory.expense[k]]; }).sort(function(a,b){ return b[1]-a[1]; });
+  var incomeRows = Object.keys(totals.byCategory.income).map(function(k){ return [k, totals.byCategory.income[k]]; }).sort(function(a,b){ return b[1]-a[1]; });
+  var isSurplus = totals.surplus >= 0;
+  var grandTotal = Math.max(totals.totalIncome, totals.totalExpense);
+
+  var openingTotal = MODES.reduce(function(s,m){ return s + (Number(state.opening[m])||0); }, 0);
+
+  var html = '<div class="print-only print-meta">' +
+      '<div class="pm-club">' + esc(state.clubName) + '</div>' +
+      '<div class="pm-sub">Income &amp; Expenditure Account &mdash; printed ' + formatDate(todayISO()) + '</div>' +
+    '</div>';
+  html += '<h2 class="section-title no-print">Income &amp; Expenditure Account</h2>' +
+    '<p class="helper-text no-print">For the period covered by entries in the register, presented in the traditional two-column (T) form.</p>' +
+    '<div class="tform-actions no-print">' +
+      '<button class="small-btn-ghost" id="printIEBtn">&#128438; Print / Save as PDF</button>' +
+      '<button class="small-btn-ghost" id="exportIECsvBtn">&#8681; Export CSV</button>' +
+    '</div>';
+
+  html += '<div class="chart-card" style="margin-bottom:20px">' +
+    '<div class="chart-title" style="margin-bottom:8px">Opening balances of funds (as set in the Funds tab)</div>' +
+    '<table><tbody>';
+  MODES.forEach(function(m){
+    html += '<tr><td>' + m + '</td><td class="num">' + fmt(Number(state.opening[m])||0) + '</td></tr>';
+  });
+  html += '<tr style="border-top:1px solid var(--ink)"><td style="font-weight:700">Total opening balance</td><td class="num" style="font-weight:700">' + fmt(openingTotal) + '</td></tr>';
+  html += '</tbody></table></div>';
+
+  html += '<div class="tform"><div class="tform-side"><div class="tform-head">Expenditure (Dr)</div>';
+
+  if (expenseRows.length === 0){
+    html += '<div class="tform-row"><span style="color:var(--ink-soft)">No expenditure recorded</span></div>';
+  } else {
+    expenseRows.forEach(function(r){
+      html += '<div class="tform-row"><span>To ' + esc(r[0]) + '</span><span style="font-family:var(--mono)">' + fmt(r[1]) + '</span></div>';
+    });
+  }
+  if (!isSurplus){
+    html += '<div class="tform-row" style="color:var(--debit);font-style:italic"><span>To Deficit carried to Capital / General Fund</span><span style="font-family:var(--mono)">' + fmt(Math.abs(totals.surplus)) + '</span></div>';
+  }
+  html += '<div class="tform-total"><span>Total</span><span style="font-family:var(--mono)">' + fmt(grandTotal) + '</span></div></div>';
+
+  html += '<div class="tform-divider"></div><div class="tform-side"><div class="tform-head">Income (Cr)</div>';
+  if (incomeRows.length === 0){
+    html += '<div class="tform-row"><span style="color:var(--ink-soft)">No income recorded</span></div>';
+  } else {
+    incomeRows.forEach(function(r){
+      html += '<div class="tform-row"><span>By ' + esc(r[0]) + '</span><span style="font-family:var(--mono)">' + fmt(r[1]) + '</span></div>';
+    });
+  }
+  if (isSurplus){
+    html += '<div class="tform-row" style="color:var(--credit);font-style:italic"><span>By Surplus carried to Capital / General Fund</span><span style="font-family:var(--mono)">' + fmt(totals.surplus) + '</span></div>';
+  }
+  html += '<div class="tform-total"><span>Total</span><span style="font-family:var(--mono)">' + fmt(grandTotal) + '</span></div></div></div>';
+  return html;
+}
+
+function bindTformEvents(){
+  document.getElementById("printIEBtn").addEventListener("click", function(){ window.print(); });
+  document.getElementById("exportIECsvBtn").addEventListener("click", exportIECsv);
+}
+
+function exportIECsv(){
+  var totals = computeTotals(state.transactions);
+  var expenseRows = Object.keys(totals.byCategory.expense).map(function(k){ return [k, totals.byCategory.expense[k]]; }).sort(function(a,b){ return b[1]-a[1]; });
+  var incomeRows = Object.keys(totals.byCategory.income).map(function(k){ return [k, totals.byCategory.income[k]]; }).sort(function(a,b){ return b[1]-a[1]; });
+  var isSurplus = totals.surplus >= 0;
+  var grandTotal = Math.max(totals.totalIncome, totals.totalExpense);
+
+  var csvField = function(v){ return '"' + String(v).replace(/"/g,'""') + '"'; };
+  var openingTotal = MODES.reduce(function(s,m){ return s + (Number(state.opening[m])||0); }, 0);
+  var lines = [];
+  lines.push(csvField("Income & Expenditure Account"));
+  lines.push(csvField(state.clubName));
+  lines.push(csvField("Generated on " + formatDate(todayISO())));
+  lines.push("");
+  lines.push(["Opening Balances","Fund","Amount"].map(csvField).join(","));
+  MODES.forEach(function(m){ lines.push(["Opening Balances", m, Number(state.opening[m])||0].map(csvField).join(",")); });
+  lines.push(["Opening Balances", "Total", openingTotal].map(csvField).join(","));
+  lines.push("");
+  lines.push(["Side","Particulars","Amount"].map(csvField).join(","));
+  expenseRows.forEach(function(r){ lines.push(["Expenditure (Dr)", "To " + r[0], r[1]].map(csvField).join(",")); });
+  if (!isSurplus){ lines.push(["Expenditure (Dr)", "To Deficit carried to Capital / General Fund", Math.abs(totals.surplus)].map(csvField).join(",")); }
+  lines.push(["Expenditure (Dr)", "Total", grandTotal].map(csvField).join(","));
+  lines.push("");
+  incomeRows.forEach(function(r){ lines.push(["Income (Cr)", "By " + r[0], r[1]].map(csvField).join(",")); });
+  if (isSurplus){ lines.push(["Income (Cr)", "By Surplus carried to Capital / General Fund", totals.surplus].map(csvField).join(",")); }
+  lines.push(["Income (Cr)", "Total", grandTotal].map(csvField).join(","));
+
+  downloadBlob(lines.join("\n"), "text/csv", state.clubName.replace(/\s+/g,"_") + "_IE_Account.csv");
+}
+
+/* ---------------- Funds ---------------- */
+function fundsHTML(){
+  var totals = computeTotals(state.transactions);
+  var html = '<h2 class="section-title">Opening balances</h2>' +
+    '<p class="helper-text">Set the balance each fund held before this register started tracking it.</p>' +
+    '<div class="funds-grid">';
+  MODES.forEach(function(m){
+    html += '<div class="fund-card"><div class="fund-label">' + m + '</div>' +
+      '<input type="number" inputmode="decimal" class="field-input" style="font-family:var(--mono)" data-fund="' + m + '" value="' + (state.opening[m]===""?"":state.opening[m]) + '" />' +
+      '<div class="fund-meta"><span style="color:var(--credit)">+' + fmt(totals.byMode[m].income) + '</span><span style="color:var(--debit)">-' + fmt(totals.byMode[m].expense) + '</span></div>' +
+      '<div class="fund-balance">' + fmt((Number(state.opening[m])||0) + totals.byMode[m].income - totals.byMode[m].expense) + '</div>' +
+      '</div>';
+  });
+  html += '</div>';
+  return html;
+}
+function bindFundsEvents(){
+  var inputs = document.querySelectorAll("[data-fund]");
+  for (var i=0;i<inputs.length;i++){
+    inputs[i].addEventListener("input", function(e){
+      var m = this.getAttribute("data-fund");
+      state.opening[m] = e.target.value === "" ? "" : Number(e.target.value);
+      saveState();
+      var card = this.closest(".fund-card");
+      var totals = computeTotals(state.transactions);
+      card.querySelector(".fund-balance").textContent = fmt((Number(state.opening[m])||0) + totals.byMode[m].income - totals.byMode[m].expense);
+    });
+  }
+}
+
+/* ---------------- Settings & Data ---------------- */
+function settingsHTML(){
+  var html = '<h2 class="section-title">Settings &amp; Data</h2>';
+
+  html += '<h3 style="font-size:14px;margin:8px 0 8px">General</h3>';
+  html += '<label class="field-label">Club / organisation name</label>' +
+    '<input id="settingsClubName" class="field-input" value="' + esc(state.clubName) + '" />';
+
+  html += '<h3 style="font-size:14px;margin:26px 0 8px">Real-time sync across devices</h3>';
+  html += '<p class="helper-text">Let your committee enter data from different phones or computers at once, with everyone seeing updates live. This uses a free Google Firebase project that your club creates and controls — your data does not pass through Anthropic.</p>';
+
+  if (sync.enabled){
+    html += '<div class="storage-note" style="border-color:var(--credit)"><strong>&#128994; Live sync on</strong> — this device stays in sync with ledger code <code style="font-family:var(--mono)">' + esc(sync.ledgerId) + '</code>.</div>';
+    html += '<div class="backup-grid" style="margin-top:12px">' +
+      '<button class="small-btn-ghost" id="copyInviteBtn">&#128203; Copy invite code for another device</button>' +
+      '<button class="small-btn-ghost" id="disconnectSyncBtn">Disconnect this device</button>' +
+      '</div>';
+  } else {
+    html += '<div class="row-flex" style="margin-bottom:14px">' +
+      '<input id="inviteCodeInput" class="field-input" placeholder="Paste an invite code from another device" />' +
+      '<button class="small-btn" id="useInviteBtn">Use code</button>' +
+      '</div>';
+    html += '<details><summary style="cursor:pointer;font-family:var(--sans);font-size:12.5px;color:var(--ink-soft)">Set up sync for the first time (needs a free Firebase project, about 5 minutes)</summary>' +
+      '<ol style="font-family:var(--sans);font-size:12.5px;color:var(--ink-soft);padding-left:18px;line-height:1.7;margin-top:10px">' +
+        '<li>Go to <span style="font-family:var(--mono)">console.firebase.google.com</span> and create a free project.</li>' +
+        '<li>Add a Web App to it, then enable <strong>Firestore Database</strong> (start in test mode).</li>' +
+        '<li>Copy the <span style="font-family:var(--mono)">firebaseConfig</span> object Firebase shows you, and paste it below.</li>' +
+        '<li>Make up a private ledger code (any word/number your committee will recognise) and click Connect.</li>' +
+      '</ol>' +
+      '<label class="field-label">Firebase config (paste the whole object)</label>' +
+      '<textarea id="firebaseConfigInput" class="field-input" rows="4" style="font-family:var(--mono);font-size:12px;resize:vertical" placeholder=\'{"apiKey":"...","authDomain":"...","projectId":"..."}\'></textarea>' +
+      '<label class="field-label">Ledger code (share this privately with your committee)</label>' +
+      '<input id="ledgerIdInput" class="field-input" placeholder="e.g. greenpark-club-2026" />' +
+      '<button class="small-btn" id="connectSyncBtn" style="margin-top:12px">Connect &amp; start syncing</button>' +
+      '</details>';
+  }
+  html += '<div class="storage-note">Anyone with your Firebase config and ledger code can read and write this data — keep both private, the same way you would a shared password.</div>';
+
+  html += '<h3 style="font-size:14px;margin:26px 0 8px">Backup &amp; restore</h3>';
+  html += '<p class="helper-text">Data always saves to this browser automatically. Use these for portability or as an extra safety copy' + (sync.enabled ? " — with live sync on, your changes already reach every connected device automatically." : ".") + '</p>';
+  html += '<div class="backup-grid">' +
+    '<button class="small-btn" id="exportJsonBtn">&#8681; Export full backup (JSON)</button>' +
+    '<button class="small-btn-ghost" id="importJsonBtn">&#8679; Import backup (JSON)</button>' +
+    '<button class="small-btn-ghost" id="exportExcelBtn">&#8681; Export as Excel workbook</button>' +
+    '</div>';
+  html += '<div class="storage-note">The <strong>JSON backup</strong> is what you\'d import back into this app to restore data. The <strong>Excel workbook</strong> is for sharing or reporting — it has separate sheets for Transactions, Categories, Opening Balances and the Income &amp; Expenditure Account, but can\'t be imported back in.</div>';
+
+  html += '<h3 style="font-size:14px;margin:26px 0 8px;color:var(--debit)">Danger zone</h3>';
+  html += '<button class="small-btn-ghost" id="resetDataBtn" style="border-color:var(--debit);color:var(--debit)">Erase all data on this device</button>';
+
+  return html;
+}
+
+function bindSettingsEvents(){
+  document.getElementById("settingsClubName").addEventListener("change", function(e){
+    state.clubName = e.target.value.trim() || "My Club";
+    saveState();
+    render();
+  });
+
+  if (sync.enabled){
+    document.getElementById("copyInviteBtn").addEventListener("click", function(){
+      copyToClipboard(encodeInvite(sync.config, sync.ledgerId));
+      showToast("Invite code copied — paste it into Settings on another device.");
+    });
+    document.getElementById("disconnectSyncBtn").addEventListener("click", function(){
+      if (window.confirm("Disconnect this device from live sync? Your data stays on this device either way.")) disconnectSync();
+    });
+  } else {
+    document.getElementById("useInviteBtn").addEventListener("click", function(){
+      var code = document.getElementById("inviteCodeInput").value.trim();
+      if (!code) return;
+      try{
+        var decoded = decodeInvite(code);
+        connectSync(decoded.c, decoded.l, {});
+      }catch(e){
+        showToast("That invite code doesn't look right.", "error");
+      }
+    });
+    document.getElementById("connectSyncBtn").addEventListener("click", function(){
+      var cfgRaw = document.getElementById("firebaseConfigInput").value.trim();
+      var ledgerId = document.getElementById("ledgerIdInput").value.trim();
+      if (!cfgRaw || !ledgerId){ showToast("Enter both the Firebase config and a ledger code.", "error"); return; }
+      var cfg;
+      try{ cfg = JSON.parse(cfgRaw); }catch(e){ showToast("That doesn't look like valid Firebase config JSON.", "error"); return; }
+      connectSync(cfg, ledgerId, {});
+    });
+  }
+
+  document.getElementById("exportJsonBtn").addEventListener("click", function(){
+    downloadBlob(JSON.stringify(state, null, 2), "application/json", state.clubName.replace(/\s+/g,"_") + "_backup.json");
+    showToast("Backup downloaded.");
+  });
+  document.getElementById("importJsonBtn").addEventListener("click", function(){
+    document.getElementById("importFileInput").click();
+  });
+  document.getElementById("exportExcelBtn").addEventListener("click", function(){
+    downloadBlob(generateExcelXml(), "application/vnd.ms-excel", state.clubName.replace(/\s+/g,"_") + "_backup.xls");
+    showToast("Excel workbook downloaded.");
+  });
+
+  document.getElementById("resetDataBtn").addEventListener("click", function(){
+    if (!window.confirm("This permanently erases every entry, category and setting stored on this device. Consider exporting a backup first. Continue?")) return;
+    if (!window.confirm("Are you absolutely sure? This cannot be undone.")) return;
+    state = defaultData();
+    saveState();
+    entryForm = freshEntryForm();
+    render();
+    showToast("All data erased.");
+  });
+}
+
+function generateExcelXml(){
+  var totals = computeTotals(state.transactions);
+  function xmlCellStr(v){ return '<Cell><Data ss:Type="String">' + esc(v) + '</Data></Cell>'; }
+  function xmlCellNum(v){ return '<Cell><Data ss:Type="Number">' + (Number(v)||0) + '</Data></Cell>'; }
+  function xmlRow(cells){ return '<Row>' + cells.join("") + '</Row>'; }
+  function sheet(name, rows){ return '<Worksheet ss:Name="' + esc(name) + '"><Table>' + rows.join("") + '</Table></Worksheet>'; }
+
+  var txnRows = state.transactions.slice().sort(function(a,b){ return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0); });
+  var txSheetRows = [xmlRow([xmlCellStr("Voucher No"),xmlCellStr("Date"),xmlCellStr("Type"),xmlCellStr("Category"),xmlCellStr("Mode"),xmlCellStr("Amount"),xmlCellStr("Note")])];
+  txnRows.forEach(function(t){
+    txSheetRows.push(xmlRow([
+      xmlCellStr(t.voucherNo||""), xmlCellStr(formatDate(t.date)), xmlCellStr(t.type==="income"?"Income":"Expense"),
+      xmlCellStr(t.category), xmlCellStr(t.mode), xmlCellNum(t.amount), xmlCellStr(t.note||"")
+    ]));
+  });
+
+  var headRows = [xmlRow([xmlCellStr("Side"),xmlCellStr("Head"),xmlCellStr("Entries"),xmlCellStr("Amount")])];
+  ["income","expense"].forEach(function(type){
+    state.categories[type].forEach(function(c){
+      var amt = totals.byCategory[type][c] || 0;
+      var count = state.transactions.filter(function(t){ return t.type===type && t.category===c; }).length;
+      headRows.push(xmlRow([xmlCellStr(type==="income"?"Income":"Expenditure"), xmlCellStr(c), xmlCellNum(count), xmlCellNum(amt)]));
+    });
+  });
+
+  var openRows = [xmlRow([xmlCellStr("Fund"),xmlCellStr("Opening Balance")])];
+  MODES.forEach(function(m){ openRows.push(xmlRow([xmlCellStr(m), xmlCellNum(Number(state.opening[m])||0)])); });
+  openRows.push(xmlRow([xmlCellStr("Total"), xmlCellNum(MODES.reduce(function(s,m){ return s+(Number(state.opening[m])||0); },0))]));
+
+  var ieRows = [xmlRow([xmlCellStr("Side"),xmlCellStr("Particulars"),xmlCellStr("Amount")])];
+  var expenseRows = Object.keys(totals.byCategory.expense).map(function(k){ return [k, totals.byCategory.expense[k]]; }).sort(function(a,b){ return b[1]-a[1]; });
+  var incomeRows = Object.keys(totals.byCategory.income).map(function(k){ return [k, totals.byCategory.income[k]]; }).sort(function(a,b){ return b[1]-a[1]; });
+  var isSurplus = totals.surplus >= 0;
+  var grandTotal = Math.max(totals.totalIncome, totals.totalExpense);
+  expenseRows.forEach(function(r){ ieRows.push(xmlRow([xmlCellStr("Expenditure (Dr)"), xmlCellStr("To " + r[0]), xmlCellNum(r[1])])); });
+  if (!isSurplus) ieRows.push(xmlRow([xmlCellStr("Expenditure (Dr)"), xmlCellStr("To Deficit c/o Capital/General Fund"), xmlCellNum(Math.abs(totals.surplus))]));
+  ieRows.push(xmlRow([xmlCellStr("Expenditure (Dr)"), xmlCellStr("Total"), xmlCellNum(grandTotal)]));
+  incomeRows.forEach(function(r){ ieRows.push(xmlRow([xmlCellStr("Income (Cr)"), xmlCellStr("By " + r[0]), xmlCellNum(r[1])])); });
+  if (isSurplus) ieRows.push(xmlRow([xmlCellStr("Income (Cr)"), xmlCellStr("By Surplus c/o Capital/General Fund"), xmlCellNum(totals.surplus)]));
+  ieRows.push(xmlRow([xmlCellStr("Income (Cr)"), xmlCellStr("Total"), xmlCellNum(grandTotal)]));
+
+  return '<?xml version="1.0"?>' +
+    '<?mso-application progid="Excel.Sheet"?>' +
+    '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet" xmlns:html="http://www.w3.org/TR/REC-html40">' +
+    sheet("Transactions", txSheetRows) +
+    sheet("Income-Expense Heads", headRows) +
+    sheet("Opening Balances", openRows) +
+    sheet("Income-Expenditure Acct", ieRows) +
+    '</Workbook>';
+}
+document.getElementById("importFileInput").addEventListener("change", function(e){
+  var file = e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(){
+    try{
+      var parsed = JSON.parse(reader.result);
+      if (!parsed || !Array.isArray(parsed.transactions) || !parsed.categories){
+        throw new Error("bad shape");
+      }
+      if (!window.confirm("Importing will replace all current entries in this browser with the backup file. Continue?")) return;
+      state = parsed;
+      if (!state.opening) state.opening = { Cash:0, Bank:0, Online:0, Card:0 };
+      migrateState();
+      saveState();
+      entryForm = freshEntryForm();
+      render();
+      showToast("Backup imported.");
+    }catch(err){
+      showToast("That file doesn't look like a valid backup.", "error");
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = "";
+});
+
+/* ---------------- boot ---------------- */
+render();
+(function(){
+  var saved = loadSyncConfig();
+  if (saved && saved.enabled && saved.config && saved.ledgerId){
+    connectSync(saved.config, saved.ledgerId, { silent:true, skipPrompt:true });
+  }
+})();
+</script>
+</body>
+</html>
